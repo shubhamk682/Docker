@@ -1,0 +1,40 @@
+name: FastAPI CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Build Docker image
+      run: docker build -t fastapi-app .
+
+    - name: Push Docker image to Container Registry
+      run: |
+        echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        docker tag fastapi-app ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-app:latest
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-app:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to Docker
+      run: |
+        echo "Deployment steps go here..."
